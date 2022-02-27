@@ -1,7 +1,11 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
+*.DS_Store
+*.npz
+*.csv
 *$py.class
+model/all-distilroberta-v1
 
 # C extensions
 *.so
