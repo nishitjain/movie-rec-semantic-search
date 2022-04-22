@@ -1,43 +1,11 @@
-from lib2to3.pytree import Base
-from urllib.request import Request
-from pydantic import BaseModel
 from fastapi import FastAPI
-from typing import List
 from semantic_search import SemanticSearch
+from schema import *
+from constants import *
 
 app = FastAPI()
 
-DATA_LOAD_PATH = "../data/movies_metadata.csv"
-MODEL_LOAD_PATH = "../model/all-distilroberta-v1"
-EMBEDDING_SAVE_PATH = "../data/corpus_embeddings.npz"
-LOAD_EMBEDDINGS = True
-
-search_obj = SemanticSearch(DATA_LOAD_PATH, MODEL_LOAD_PATH, EMBEDDING_SAVE_PATH, LOAD_EMBEDDINGS)
-
-class Movie(BaseModel):
-    title: str
-    release_date: str
-    genre: List[str]
-    rating: float
-
-class SingleResult(BaseModel):
-    rank: int
-    movie: Movie
-
-class QueryResult(BaseModel):
-    query: str
-    movies: List[SingleResult]
-
-class SearchRequest(BaseModel):
-    search_texts: List[str]
-
-class SearchResponse(BaseModel):
-    results: List[QueryResult] = []
-
-class SearchError(BaseModel):
-    error_code: int
-    status: str
-    description: str
+search_obj = SemanticSearch(LOAD_INDEX, DIM, DATA_LOAD_PATH, MODEL_LOAD_PATH, EMBEDDING_SAVE_PATH, INDEX_SAVE_PATH, PREPROCESS_DATA, LOAD_EMBEDDINGS)
 
 @app.post("/search")
 async def get_matches(request: SearchRequest):
@@ -45,17 +13,20 @@ async def get_matches(request: SearchRequest):
         error_dict = {"error_code": 400, "status": "INVALID_REQUEST", "description": "Missing Data"}
         return SearchError(**error_dict)
     else:
-        results = search_obj.get_hits(queries=request.search_texts, k=10)
+        results = search_obj.get_hits(queries=request.search_texts, k=K)
         response = []
         for result in results:
             movies = []
             query = result[0]
             for hit in result[1]:
-                title = search_obj.processor.data.iloc[hit['corpus_id']]['original_title']
-                release_date = str(search_obj.processor.data.iloc[hit['corpus_id']]['release_date'])
-                genre = search_obj.processor.data.iloc[hit['corpus_id']]['genre']
-                rating = 3.5 # search_obj.processor.data.iloc[hit['corpus_id']]['avg_user_rating']
-                movie_dict = {"title": title, "release_date": release_date, "genre": genre, "rating": rating}
+                title = search_obj.processor.data.iloc[hit]['original_title']
+                overview = search_obj.processor.data.iloc[hit]['overview']
+                tagline = search_obj.processor.data.iloc[hit]['tagline']
+                release_date = str(search_obj.processor.data.iloc[hit]['release_date'])
+                genre = search_obj.processor.data.iloc[hit]['genre']
+                vote_average = search_obj.processor.data.iloc[hit]['vote_average']
+                vote_count = search_obj.processor.data.iloc[hit]['vote_count']
+                movie_dict = {"title": title, "overview": overview, "tagline": tagline, "release_date": release_date, "genre": genre, "vote_average": vote_average, "vote_count": vote_count}
                 movie = Movie(**movie_dict)
                 rank = result[1].index(hit) + 1
                 single_result_dict = {"rank": rank, "movie": movie}

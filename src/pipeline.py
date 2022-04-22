@@ -4,8 +4,10 @@ import numpy as np
 from sentence_transformers import SentenceTransformer, util
 
 class Processor():
-    def __init__(self, data_load_path, model_load_path, embeddings_save_path, load_embeddings):
-        self.data = pd.read_csv(data_load_path)
+    def __init__(self, data_load_path, model_load_path, embeddings_save_path, preprocess_data, load_embeddings):
+        self.preprocess_data = preprocess_data
+        self.data_load_path = data_load_path
+        self.data = pd.read_csv(self.data_load_path)
         self.save_path = embeddings_save_path
         self.embeddings_save_path = embeddings_save_path
         self.load_embeddings = load_embeddings
@@ -28,12 +30,13 @@ class Processor():
         return names
 
     def preprocess(self):
-        self.data['genre'] = self.data['genres'].apply(lambda x: self.parse_lst_dict(x, 'name'))
-        self.data['languages'] = self.data['spoken_languages'].apply(lambda x: self.parse_lst_dict(x, 'name'))
-        self.data.drop(['belongs_to_collection', 'genres', 'homepage', 'imdb_id', 'original_language', 'production_companies',\
-            'production_countries', 'title', 'video', 'poster_path', 'spoken_languages'], axis=1, inplace=True)
-        self.data.dropna(subset='overview', inplace=True)
-        # self.data = self.data.iloc[:512]
+        if self.preprocess_data:
+            self.data['genre'] = self.data['genres'].apply(lambda x: self.parse_lst_dict(x, 'name'))
+            self.data['languages'] = self.data['spoken_languages'].apply(lambda x: self.parse_lst_dict(x, 'name'))
+            self.data.drop(['belongs_to_collection', 'genres', 'homepage', 'imdb_id', 'original_language', 'production_companies',\
+                'production_countries', 'title', 'video', 'poster_path', 'spoken_languages'], axis=1, inplace=True)
+            self.data.dropna(subset='overview', inplace=True)
+            self.data.to_csv(self.data_load_path.split(".csv")[0]+"_preprocessed.csv", index=False)
         
     def get_embeddings(self):
         self.preprocess()

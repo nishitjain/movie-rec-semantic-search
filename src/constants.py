@@ -1,0 +1,9 @@
+DATA_LOAD_PATH = "../data/movies_metadata.csv"
+MODEL_LOAD_PATH = "../model/all-distilroberta-v1"
+EMBEDDING_SAVE_PATH = "../data/corpus_embeddings.npz"
+INDEX_SAVE_PATH = "../data/movies_index.annoy"
+PREPROCESS_DATA = True
+LOAD_EMBEDDINGS = True
+LOAD_INDEX = True
+DIM = 768
+K = 5
